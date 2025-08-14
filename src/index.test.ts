@@ -126,7 +126,8 @@ describe("screenshot-mcp", () => {
 				expect(responseText).toMatch(/Screenshot successfully taken and saved to: (.+\.png)/);
 
 				// Extract the file path from the response
-				const pathMatch = responseText.match(/Screenshot successfully taken and saved to: (.+\.png)/);
+				const pathRegex = /Screenshot successfully taken and saved to: (.+\.png)/;
+				const pathMatch = pathRegex.exec(responseText);
 				if (pathMatch) {
 					const filePath = pathMatch[1];
 					console.log("Screenshot saved to:", filePath);
@@ -226,7 +227,8 @@ describe("screenshot-mcp", () => {
 			expect(result.content[0].text).toMatch(/Screenshot successfully taken and saved to:/);
 
 			// Extract the file path and verify it exists
-			const pathMatch = result.content[0].text.match(/Screenshot successfully taken and saved to: (.+\.png)/);
+			const pathRegex = /Screenshot successfully taken and saved to: (.+\.png)/;
+			const pathMatch = pathRegex.exec(result.content[0].text);
 			if (pathMatch) {
 				const filePath = pathMatch[1];
 				expect(existsSync(filePath)).toBe(true);

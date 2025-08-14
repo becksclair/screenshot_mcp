@@ -17,26 +17,31 @@ bun install
 ## Usage
 
 ### Development
+
 ```bash
 bun run dev
 ```
 
 ### Production
+
 ```bash
 bun start
 ```
 
 ### Build
+
 ```bash
 bun run build
 ```
 
 ### Testing
+
 ```bash
 bun test
 ```
 
 ### Type Checking
+
 ```bash
 bun run typecheck
 ```
@@ -45,9 +50,11 @@ bun run typecheck
 
 The server provides a `take_screenshot` tool that:
 
-- **Input**: 
+- **Input**:
+
   - `appName` (string) - The name of the application to screenshot
   - `compress` (boolean, optional) - Whether to apply PNG compression to reduce file size
+
 - **Output**: Path to the saved screenshot file
 
 ### Example Usage
@@ -62,6 +69,7 @@ The server provides a `take_screenshot` tool that:
 ```
 
 **With compression:**
+
 ```json
 {
   "name": "take_screenshot",
@@ -74,7 +82,7 @@ The server provides a `take_screenshot` tool that:
 
 ## Project Structure
 
-```
+```tree
 screenshot_mcp/
 ├── src/
 │   ├── index.ts          # Main MCP server using McpServer API
@@ -116,6 +124,7 @@ screenshot_mcp/
 **Parallel Efficiency:** 62.6% (limited by macOS screenshot system bottlenecks)
 
 **Recommendations:**
+
 - ✅ Use parallel captures for multiple screenshots (1.9x speedup)
 - ⚠️ Consider rate limiting for concurrent requests to avoid system overload
 - 💡 Optimal concurrency appears to be 2-3 simultaneous captures
@@ -123,6 +132,7 @@ screenshot_mcp/
 ### Compression Feature
 
 The optional `compress: true` parameter applies PNG optimization using macOS `sips` utility:
+
 - **Method**: PNG format recompression with default optimization
 - **Typical savings**: 0-5% for screenshots (already well-compressed by screencapture)
 - **Use case**: Enable for storage-constrained environments or batch operations

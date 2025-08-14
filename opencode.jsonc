@@ -17,16 +17,17 @@
 				}
 			}
 		},
+
 		"ollama": {
 			"npm": "@ai-sdk/openai-compatible",
-			"name": "Ollama (local)",
+			"name": "Ollama [RTX 5070 Ti]",
 			"options": {
-				"baseURL": "http://localhost:11434/v1"
-				// Ollama doesn't require an API key by default.
-				// If you added auth proxying, put "apiKey": "..." here.
+				"baseURL": "http://172.16.0.210:11434/v1"
 			},
 			"models": {
-				"gemma3:4b": { "name": "Gemma 3 (4B) — local" }
+				"devstral": {
+					"name": "Devstral (Mistral AI)"
+				}
 			}
 		}
 	}

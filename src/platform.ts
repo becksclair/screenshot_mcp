@@ -134,7 +134,7 @@ export const linuxScreenshotUtils = {
 		return false;
 	},
 
-	takeScreenshot: async (appName: string): Promise<string> => {
+	takeScreenshot: async (_appName: string): Promise<string> => {
 		// TODO: Implement using grim/slurp
 		throw new Error("Linux screenshot support not yet implemented");
 	}
@@ -155,12 +155,12 @@ export const windowsScreenshotUtils = {
 		return "unknown";
 	},
 
-	findWindowByTitle: async (title: string): Promise<number | null> => {
+	findWindowByTitle: async (_title: string): Promise<number | null> => {
 		// TODO: Find window handle by application name/title
 		return null;
 	},
 
-	takeScreenshot: async (appName: string): Promise<string> => {
+	takeScreenshot: async (_appName: string): Promise<string> => {
 		// TODO: Implement using PowerShell + Windows APIs
 		throw new Error("Windows screenshot support not yet implemented");
 	}

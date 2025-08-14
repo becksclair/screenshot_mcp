@@ -3,16 +3,25 @@ import { getUnsupportedPlatformMessage, supportsScreenshots } from "./platform.j
 // Removed direct shell script spawning; now delegate to TypeScript implementation
 import { screenshotApp } from "./winshot.js";
 
-// projectRoot retained only if future relative path needs; no longer used for runScreenshot
-const projectRoot = import.meta.dir;
+// projectRoot retained only if future relative path needs; currently unused
+const _projectRoot = import.meta.dir;
+
+export interface McpTextContent {
+	type: "text";
+	text: string;
+}
+
+export interface McpImageContent {
+	type: "image";
+	mimeType: string;
+	data: string; // base64 data
+}
+
+export type McpContentItem = McpTextContent | McpImageContent;
 
 export interface ScreenshotResult {
 	[x: string]: unknown;
-	content: Array<{
-		[x: string]: unknown;
-		type: "text";
-		text: string;
-	}>;
+	content: McpContentItem[];
 	isError?: boolean;
 }
 
@@ -26,9 +35,74 @@ export interface ListAppsResult {
 	isError?: boolean;
 }
 
+// Helper to decide embedding threshold
+const DEFAULT_INLINE_MAX = 1_000_000; // 1MB
+function resolveInlineMaxBytes(override?: number): number {
+	const envVal = process.env.MCP_SCREENSHOT_EMBED_MAX_BYTES;
+	if (override !== undefined) return override;
+	if (envVal) {
+		const parsed = Number(envVal);
+		if (!Number.isNaN(parsed) && parsed > 0) return parsed;
+	}
+	return DEFAULT_INLINE_MAX;
+}
+
+function shouldEmbed(size: number, threshold: number, force?: boolean): boolean {
+	if (force) return size <= threshold; // caller opted in with returnData
+	return size <= threshold; // auto-embed when small enough
+}
+
+export { shouldEmbed };
+
+function embedFileContent(
+	path: string,
+	label: string, // already includes trailing space and colon phrase used previously
+	options: { inlineMaxBytes?: number; force?: boolean }
+): ScreenshotResult {
+	try {
+		const stats = statSync(path);
+		const threshold = resolveInlineMaxBytes(options.inlineMaxBytes);
+		if (shouldEmbed(stats.size, threshold, options.force)) {
+			const buf = readFileSync(path);
+			const b64 = buf.toString("base64");
+			const kb = Math.round(stats.size / 1024);
+			return {
+				content: [
+					{ type: "image", mimeType: "image/png", data: b64 },
+					{ type: "text", text: `${label}${path} (embedded inline, ${kb} KB)` }
+				]
+			};
+		}
+		return {
+			content: [
+				{
+					type: "text",
+					text: `${label}${path} (not embedded; ${Math.round(stats.size / 1024)} KB exceeds ${Math.round(
+						resolveInlineMaxBytes(options.inlineMaxBytes) / 1024
+					)} KB limit)`
+				}
+			]
+		};
+	} catch (e) {
+		return {
+			content: [
+				{
+					type: "text",
+					text: `${label}${path} (embedding failed: ${e instanceof Error ? e.message : String(e)})`
+				}
+			]
+		};
+	}
+}
+
 export async function runScreenshot(
 	appName: string,
-	options?: { compress?: boolean; windowStrategy?: "auto" | "id" | "bounds" | "interactive"; returnData?: boolean }
+	options?: {
+		compress?: boolean;
+		windowStrategy?: "auto" | "id" | "bounds" | "interactive";
+		returnData?: boolean; // explicit request for embedding (legacy meaning preserved)
+		inlineMaxBytes?: number; // override threshold
+	}
 ): Promise<ScreenshotResult> {
 	try {
 		// Platform guard - check if screenshots are supported
@@ -58,29 +132,15 @@ export async function runScreenshot(
 			};
 		}
 
-		// If base64 requested and supplied
-		if (options?.returnData && result.dataUri) {
-			// Provide same style messaging used previously
-			const sizeKb = result.tooLargeForData ? "(too large)" : "";
-			return {
-				content: [
-					{
-						type: "text",
-						text: result.tooLargeForData
-							? `Screenshot file too large for base64 encoding. File saved to: ${result.path}`
-							: `Screenshot successfully captured as base64 data ${sizeKb}: ${result.dataUri}`
-					}
-				]
-			};
+		if (result.path && existsSync(result.path)) {
+			return embedFileContent(result.path, "Screenshot successfully taken and saved to: ", {
+				inlineMaxBytes: options?.inlineMaxBytes,
+				force: options?.returnData
+			});
 		}
-
-		// Normal success path
 		return {
 			content: [
-				{
-					type: "text",
-					text: `Screenshot successfully taken and saved to: ${result.path}`
-				}
+				{ type: "text", text: `Screenshot successfully taken and saved to: ${result.path || "<unknown path>"}` }
 			]
 		};
 	} catch (error) {
@@ -223,7 +283,7 @@ export async function captureRegion(
 	y: number,
 	width: number,
 	height: number,
-	options?: { compress?: boolean; returnData?: boolean }
+	options?: { compress?: boolean; returnData?: boolean; inlineMaxBytes?: number }
 ): Promise<ScreenshotResult> {
 	try {
 		// Platform guard - check if screenshots are supported
@@ -346,60 +406,10 @@ export async function captureRegion(
 			await compressProc.exited;
 		}
 
-		// Handle returnData option for base64 encoding
-		if (options?.returnData) {
-			try {
-				// Check file size (1MB = 1024 * 1024 bytes)
-				const stats = statSync(filename);
-				const fileSizeInBytes = stats.size;
-				const maxSizeInBytes = 1024 * 1024; // 1MB
-
-				if (fileSizeInBytes > maxSizeInBytes) {
-					return {
-						content: [
-							{
-								type: "text",
-								text: `Region screenshot file too large for base64 encoding (${Math.round(fileSizeInBytes / 1024)} KB > 1024 KB limit). Use returnData=false to get file path instead. File saved to: ${filename}`
-							}
-						],
-						isError: false
-					};
-				}
-
-				// Read the file and encode as base64
-				const fileBuffer = readFileSync(filename);
-				const base64Data = fileBuffer.toString("base64");
-				const dataUri = `data:image/png;base64,${base64Data}`;
-
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Region screenshot successfully captured as base64 data (${Math.round(fileSizeInBytes / 1024)} KB): ${dataUri}`
-						}
-					]
-				};
-			} catch (readError) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Region screenshot taken and saved to: ${filename}, but failed to read file for base64 encoding: ${readError instanceof Error ? readError.message : String(readError)}`
-						}
-					],
-					isError: false // File was created successfully, just couldn't encode
-				};
-			}
-		}
-
-		return {
-			content: [
-				{
-					type: "text",
-					text: `Region screenshot successfully captured and saved to: ${filename}`
-				}
-			]
-		};
+		return embedFileContent(filename, "Region screenshot successfully captured and saved to: ", {
+			inlineMaxBytes: options?.inlineMaxBytes,
+			force: options?.returnData
+		});
 	} catch (error) {
 		if (error instanceof Error && error.message === "[TIMEOUT]") {
 			return {

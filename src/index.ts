@@ -27,7 +27,17 @@ const takeScreenshotSchema = {
 	returnData: z
 		.boolean()
 		.optional()
-		.describe("If true, return base64 encoded image data instead of file path (size limit: 1MB, default: false)")
+		.describe(
+			"If true, attempt to embed image data (subject to size threshold). Image still returned automatically when small."
+		),
+	inlineMaxBytes: z
+		.number()
+		.int()
+		.positive()
+		.optional()
+		.describe(
+			"Optional override for maximum embedded image size in bytes (default 1,000,000; can also set MCP_SCREENSHOT_EMBED_MAX_BYTES env)"
+		)
 } as const;
 
 server.registerTool(
@@ -47,7 +57,7 @@ server.registerTool(
 				isError: true
 			} as const;
 		}
-		const { appName, compress, format, windowStrategy, returnData } = parsed.data;
+		const { appName, compress, format, windowStrategy, returnData, inlineMaxBytes } = parsed.data;
 		if (format && format !== "png") {
 			return {
 				content: [
@@ -59,7 +69,7 @@ server.registerTool(
 				isError: true
 			} as const;
 		}
-		return await runScreenshot(appName, { compress, windowStrategy, returnData });
+		return await runScreenshot(appName, { compress, windowStrategy, returnData, inlineMaxBytes });
 	}
 );
 
@@ -93,7 +103,17 @@ const captureRegionSchema = {
 	returnData: z
 		.boolean()
 		.optional()
-		.describe("If true, return base64 encoded image data instead of file path (size limit: 1MB, default: false)")
+		.describe(
+			"If true, attempt to embed image data (subject to size threshold). Image still returned automatically when small."
+		),
+	inlineMaxBytes: z
+		.number()
+		.int()
+		.positive()
+		.optional()
+		.describe(
+			"Optional override for maximum embedded image size in bytes (default 1,000,000; can also set MCP_SCREENSHOT_EMBED_MAX_BYTES env)"
+		)
 } as const;
 
 server.registerTool(
@@ -112,8 +132,8 @@ server.registerTool(
 				isError: true
 			} as const;
 		}
-		const { x, y, width, height, compress, returnData } = parsed.data;
-		return await captureRegion(x, y, width, height, { compress, returnData });
+		const { x, y, width, height, compress, returnData, inlineMaxBytes } = parsed.data;
+		return await captureRegion(x, y, width, height, { compress, returnData, inlineMaxBytes });
 	}
 );
 

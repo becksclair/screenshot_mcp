@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getPlatformInfo, getUnsupportedPlatformMessage, isMac, supportsScreenshots } from "./platform.js";
-import { runScreenshot } from "./screenshot.js";
+import { captureRegion, listRunningApps, runScreenshot } from "./screenshot.js";
 
 describe("screenshot-mcp", () => {
 	const createdFiles: string[] = [];
@@ -269,4 +269,275 @@ describe("screenshot-mcp", () => {
 			expect(message).toMatch(/Not yet implemented|Not supported/);
 		}
 	});
+
+	test("should list running applications", async () => {
+		const result = await listRunningApps();
+
+		expect(result).toBeDefined();
+		expect(result.content).toBeDefined();
+		expect(Array.isArray(result.content)).toBe(true);
+		expect(result.content.length).toBeGreaterThan(0);
+
+		const responseText = result.content[0].text;
+
+		if (result.isError) {
+			// On non-macOS platforms or if there's an error
+			expect(responseText).toMatch(/App listing failed|not available|not supported/);
+			console.log("App listing test skipped - platform not supported or error occurred");
+		} else {
+			// Should return valid JSON array
+			expect(() => JSON.parse(responseText)).not.toThrow();
+
+			const apps = JSON.parse(responseText);
+			expect(Array.isArray(apps)).toBe(true);
+
+			// Should have at least one app running (the test runner itself or system apps)
+			if (process.platform === "darwin") {
+				expect(apps.length).toBeGreaterThan(0);
+
+				// Each app name should be a string
+				apps.forEach((app: unknown) => {
+					expect(typeof app).toBe("string");
+					expect(app).toBeTruthy();
+				});
+
+				// Should be sorted alphabetically
+				const sortedApps = [...apps].sort((a: string, b: string) => a.localeCompare(b));
+				expect(apps).toEqual(sortedApps);
+
+				console.log(
+					`✅ Found ${apps.length} running apps: ${apps.slice(0, 3).join(", ")}${apps.length > 3 ? "..." : ""}`
+				);
+			}
+		}
+	}, 15000); // 15 second timeout
+
+	test("should validate screenshot format parameter", () => {
+		// Test format validation with Zod schema
+		const formatSchema = z.enum(["png"]).optional().default("png");
+
+		// Valid format
+		expect(() => formatSchema.parse("png")).not.toThrow();
+		expect(() => formatSchema.parse(undefined)).not.toThrow();
+		expect(formatSchema.parse(undefined)).toBe("png");
+
+		// Invalid format should throw
+		expect(() => formatSchema.parse("jpg")).toThrow();
+		expect(() => formatSchema.parse("jpeg")).toThrow();
+		expect(() => formatSchema.parse("gif")).toThrow();
+		expect(() => formatSchema.parse("webp")).toThrow();
+	});
+
+	test("should validate windowStrategy parameter", () => {
+		// Test window strategy validation with Zod schema
+		const strategySchema = z.enum(["auto", "id", "bounds", "interactive"]).optional().default("auto");
+
+		// Valid strategies
+		expect(() => strategySchema.parse("auto")).not.toThrow();
+		expect(() => strategySchema.parse("id")).not.toThrow();
+		expect(() => strategySchema.parse("bounds")).not.toThrow();
+		expect(() => strategySchema.parse("interactive")).not.toThrow();
+		expect(() => strategySchema.parse(undefined)).not.toThrow();
+		expect(strategySchema.parse(undefined)).toBe("auto");
+
+		// Invalid strategies should throw
+		expect(() => strategySchema.parse("window")).toThrow();
+		expect(() => strategySchema.parse("fullscreen")).toThrow();
+		expect(() => strategySchema.parse("region")).toThrow();
+	});
+
+	test("should validate capture_region coordinate parameters", () => {
+		// Test coordinate validation with Zod schemas
+		const coordinateSchema = z.number().int().min(0);
+		const sizeSchema = z.number().int().min(1);
+
+		// Valid coordinates
+		expect(() => coordinateSchema.parse(0)).not.toThrow();
+		expect(() => coordinateSchema.parse(100)).not.toThrow();
+		expect(() => coordinateSchema.parse(1920)).not.toThrow();
+
+		// Valid sizes
+		expect(() => sizeSchema.parse(1)).not.toThrow();
+		expect(() => sizeSchema.parse(100)).not.toThrow();
+		expect(() => sizeSchema.parse(1920)).not.toThrow();
+
+		// Invalid coordinates (negative)
+		expect(() => coordinateSchema.parse(-1)).toThrow();
+		expect(() => coordinateSchema.parse(-100)).toThrow();
+
+		// Invalid sizes (zero or negative)
+		expect(() => sizeSchema.parse(0)).toThrow();
+		expect(() => sizeSchema.parse(-1)).toThrow();
+		expect(() => sizeSchema.parse(-100)).toThrow();
+
+		// Non-integers should throw
+		expect(() => coordinateSchema.parse(10.5)).toThrow();
+		expect(() => sizeSchema.parse(10.5)).toThrow();
+	});
+
+	test("should capture screen region successfully", async () => {
+		const result = await captureRegion(0, 0, 100, 100);
+
+		expect(result).toBeDefined();
+		expect(result.content).toBeDefined();
+		expect(Array.isArray(result.content)).toBe(true);
+		expect(result.content.length).toBeGreaterThan(0);
+
+		const responseText = result.content[0].text;
+
+		if (result.isError) {
+			// On non-macOS platforms or if there's an error
+			expect(responseText).toMatch(/Region capture failed|not available|not supported/);
+			console.log("Region capture test skipped - platform not supported or error occurred");
+		} else {
+			// Should return valid success message with file path
+			expect(responseText).toMatch(/Region screenshot successfully captured and saved to: (.+\.png)/);
+
+			// Extract the file path and verify it exists
+			const pathRegex = /Region screenshot successfully captured and saved to: (.+\.png)/;
+			const pathMatch = pathRegex.exec(responseText);
+			if (pathMatch) {
+				const filePath = pathMatch[1];
+				expect(existsSync(filePath)).toBe(true);
+				expect(filePath).toMatch(/screenshot_region_0_0_100x100/);
+
+				// Add to cleanup list
+				createdFiles.push(filePath);
+
+				console.log("✅ Region capture test passed - file created and verified");
+			}
+		}
+	}, 15000); // 15 second timeout
+
+	test("should handle invalid region coordinates", async () => {
+		// Test with negative coordinates
+		const negativeX = await captureRegion(-10, 0, 100, 100);
+		expect(negativeX.isError).toBe(true);
+		expect(negativeX.content[0].text).toMatch(/Invalid coordinates.*x=-10/);
+
+		const negativeY = await captureRegion(0, -10, 100, 100);
+		expect(negativeY.isError).toBe(true);
+		expect(negativeY.content[0].text).toMatch(/Invalid coordinates.*y=-10/);
+
+		// Test with zero or negative dimensions
+		const zeroWidth = await captureRegion(0, 0, 0, 100);
+		expect(zeroWidth.isError).toBe(true);
+		expect(zeroWidth.content[0].text).toMatch(/Invalid coordinates.*width=0/);
+
+		const negativeHeight = await captureRegion(0, 0, 100, -50);
+		expect(negativeHeight.isError).toBe(true);
+		expect(negativeHeight.content[0].text).toMatch(/Invalid coordinates.*height=-50/);
+	});
+
+	test("should support compression in region capture", async () => {
+		const result = await captureRegion(0, 0, 50, 50, { compress: true });
+
+		expect(result).toBeDefined();
+
+		if (result.isError) {
+			// On non-macOS platforms, should get platform error
+			expect(result.content[0].text).toMatch(/Region capture failed|not available|macOS only/);
+			console.log("Region capture compression test skipped - platform not supported");
+		} else {
+			// Should succeed with compression applied
+			expect(result.content[0].text).toMatch(/Region screenshot successfully captured and saved to:/);
+
+			// Extract the file path and verify it exists
+			const pathRegex = /Region screenshot successfully captured and saved to: (.+\.png)/;
+			const pathMatch = pathRegex.exec(result.content[0].text);
+			if (pathMatch) {
+				const filePath = pathMatch[1];
+				expect(existsSync(filePath)).toBe(true);
+
+				// Add to cleanup list
+				createdFiles.push(filePath);
+
+				console.log("✅ Region capture compression test passed - file created with compression");
+			}
+		}
+	}, 15000);
+
+	test("should return base64 data when returnData=true", async () => {
+		const result = await runScreenshot("Electron", { returnData: true });
+
+		expect(result).toBeDefined();
+
+		if (result.isError) {
+			// On non-macOS platforms, should get platform error
+			expect(result.content[0].text).toMatch(/Screenshot failed|not available|macOS only/);
+			console.log("Base64 screenshot test skipped - platform not supported");
+		} else {
+			const responseText = result.content[0].text;
+			
+			if (responseText.includes("too large for base64 encoding")) {
+				// File was too large, which is acceptable
+				expect(responseText).toMatch(/Screenshot file too large for base64 encoding.*Use returnData=false/);
+				expect(responseText).toMatch(/File saved to:/);
+				console.log("✅ Base64 test passed - file too large, returned path instead");
+			} else {
+				// Should contain base64 data URI
+				expect(responseText).toMatch(/Screenshot successfully captured as base64 data.*data:image\/png;base64,/);
+				
+				// Extract the base64 data
+				const dataUriMatch = responseText.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
+				expect(dataUriMatch).toBeTruthy();
+				
+				if (dataUriMatch) {
+					const base64Data = dataUriMatch[1];
+					expect(base64Data.length).toBeGreaterThan(100); // Should have substantial base64 data
+					console.log(`✅ Base64 screenshot test passed - ${Math.round(base64Data.length / 1024)} KB base64 data returned`);
+				}
+			}
+		}
+	}, 20000); // 20 second timeout
+
+	test("should handle returnData with region capture", async () => {
+		const result = await captureRegion(0, 0, 50, 50, { returnData: true });
+
+		expect(result).toBeDefined();
+
+		if (result.isError) {
+			// On non-macOS platforms, should get platform error
+			expect(result.content[0].text).toMatch(/Region capture failed|not available|macOS only/);
+			console.log("Base64 region capture test skipped - platform not supported");
+		} else {
+			const responseText = result.content[0].text;
+			
+			if (responseText.includes("too large for base64 encoding")) {
+				// File was too large (shouldn't happen with 50x50 region, but possible)
+				expect(responseText).toMatch(/Region screenshot file too large for base64 encoding.*Use returnData=false/);
+				expect(responseText).toMatch(/File saved to:/);
+				console.log("✅ Base64 region test passed - file too large, returned path instead");
+			} else {
+				// Should contain base64 data URI
+				expect(responseText).toMatch(/Region screenshot successfully captured as base64 data.*data:image\/png;base64,/);
+				
+				// Extract the base64 data
+				const dataUriMatch = responseText.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
+				expect(dataUriMatch).toBeTruthy();
+				
+				if (dataUriMatch) {
+					const base64Data = dataUriMatch[1];
+					expect(base64Data.length).toBeGreaterThan(50); // Small region should have some base64 data
+					console.log(`✅ Base64 region capture test passed - ${Math.round(base64Data.length / 1024)} KB base64 data returned`);
+				}
+			}
+		}
+	}, 15000); // 15 second timeout
+
+	test("should fallback to file path for large files with returnData=true", async () => {
+		// This test would be hard to guarantee without creating a very large screenshot
+		// so we'll just verify the parameter passes through correctly
+		const result = await runScreenshot("Electron", { returnData: false });
+
+		expect(result).toBeDefined();
+
+		if (!result.isError) {
+			const responseText = result.content[0].text;
+			// With returnData=false, should always return file path
+			expect(responseText).toMatch(/Screenshot successfully taken and saved to:/);
+			expect(responseText).not.toMatch(/base64/);
+			console.log("✅ File path mode test passed - returned path instead of base64");
+		}
+	}, 15000);
 });

@@ -21,7 +21,8 @@
 			"Bash(hyperfine:*)",
 			"Bash(bun:*)",
 			"Bash(COMPRESS=1 ./winshot.sh Electron)",
-			"Bash(sips:*)"
+			"Bash(sips:*)",
+			"Bash(WINDOW_STRATEGY=bounds ./winshot.sh Electron)"
 		],
 		"defaultMode": "acceptEdits"
 	}

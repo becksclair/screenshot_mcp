@@ -121,28 +121,65 @@ EOF
 
 echo "📸 Taking screenshot..."
 
-# Try different capture methods based on what we found
-if [[ "$WINDOW_INFO" == WINDOW_ID:* ]]; then
-    # Extract window ID and use it
-    WINDOW_ID=${WINDOW_INFO#WINDOW_ID:}
-    echo "✅ Using window ID method (ID: $WINDOW_ID)"
-    screencapture -l "$WINDOW_ID" -o "$FILENAME"
-elif [[ "$WINDOW_INFO" == BOUNDS:* ]]; then
-    # Extract bounds and use region capture
-    BOUNDS=${WINDOW_INFO#BOUNDS:}
-    IFS=',' read -r x y w h <<< "$BOUNDS"
-    echo "✅ Using bounds method (${x},${y} ${w}x${h})"
-    screencapture -R "${x},${y},${w},${h}" -o "$FILENAME"
-elif [[ "$WINDOW_INFO" == "NO_WINDOWS" ]]; then
-    # App might be a menu bar app or have no windows - try interactive selection
-    echo "⚠️  App has no windows. Starting interactive selection..."
-    echo "💡 Click on the app window or area you want to capture when the crosshair appears"
-    screencapture -i -o "$FILENAME"
-else
-    # Fallback: try to capture the frontmost window
-    echo "⚠️  Falling back to frontmost window capture"
-    screencapture -w -o "$FILENAME"
-fi
+# Determine capture method based on WINDOW_STRATEGY environment variable
+STRATEGY="${WINDOW_STRATEGY:-auto}"
+echo "🎯 Using window strategy: $STRATEGY"
+
+case "$STRATEGY" in
+    "id")
+        # Force window ID method
+        if [[ "$WINDOW_INFO" == WINDOW_ID:* ]]; then
+            WINDOW_ID=${WINDOW_INFO#WINDOW_ID:}
+            echo "✅ Using window ID method (ID: $WINDOW_ID)"
+            screencapture -l "$WINDOW_ID" -o "$FILENAME"
+        else
+            echo "⚠️  Window ID not available, falling back to frontmost window"
+            screencapture -w -o "$FILENAME"
+        fi
+        ;;
+    "bounds")
+        # Force bounds method
+        if [[ "$WINDOW_INFO" == BOUNDS:* ]]; then
+            BOUNDS=${WINDOW_INFO#BOUNDS:}
+            IFS=',' read -r x y w h <<< "$BOUNDS"
+            echo "✅ Using bounds method (${x},${y} ${w}x${h})"
+            screencapture -R "${x},${y},${w},${h}" -o "$FILENAME"
+        else
+            echo "⚠️  Window bounds not available, falling back to frontmost window"
+            screencapture -w -o "$FILENAME"
+        fi
+        ;;
+    "interactive")
+        # Force interactive selection
+        echo "🖱️  Starting interactive selection..."
+        echo "💡 Click on the app window or area you want to capture when the crosshair appears"
+        screencapture -i -o "$FILENAME"
+        ;;
+    "auto"|*)
+        # Auto mode - try different capture methods based on what we found
+        if [[ "$WINDOW_INFO" == WINDOW_ID:* ]]; then
+            # Extract window ID and use it
+            WINDOW_ID=${WINDOW_INFO#WINDOW_ID:}
+            echo "✅ Using window ID method (ID: $WINDOW_ID)"
+            screencapture -l "$WINDOW_ID" -o "$FILENAME"
+        elif [[ "$WINDOW_INFO" == BOUNDS:* ]]; then
+            # Extract bounds and use region capture
+            BOUNDS=${WINDOW_INFO#BOUNDS:}
+            IFS=',' read -r x y w h <<< "$BOUNDS"
+            echo "✅ Using bounds method (${x},${y} ${w}x${h})"
+            screencapture -R "${x},${y},${w},${h}" -o "$FILENAME"
+        elif [[ "$WINDOW_INFO" == "NO_WINDOWS" ]]; then
+            # App might be a menu bar app or have no windows - try interactive selection
+            echo "⚠️  App has no windows. Starting interactive selection..."
+            echo "💡 Click on the app window or area you want to capture when the crosshair appears"
+            screencapture -i -o "$FILENAME"
+        else
+            # Fallback: try to capture the frontmost window
+            echo "⚠️  Falling back to frontmost window capture"
+            screencapture -w -o "$FILENAME"
+        fi
+        ;;
+esac
 
 if [ -f "$FILENAME" ]; then
     echo "📸 Screenshot saved: $FILENAME"

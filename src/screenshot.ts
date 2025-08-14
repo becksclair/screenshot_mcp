@@ -1,6 +1,6 @@
-import { join } from "node:path";
 import { existsSync } from "node:fs";
-import { supportsScreenshots, getUnsupportedPlatformMessage } from "./platform.js";
+import { join } from "node:path";
+import { getUnsupportedPlatformMessage, supportsScreenshots } from "./platform.js";
 
 const projectRoot = import.meta.dir;
 

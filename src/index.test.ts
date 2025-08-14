@@ -1,10 +1,10 @@
-import { describe, test, expect, afterAll } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
+import { existsSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { join } from "node:path";
-import { existsSync, unlinkSync } from "node:fs";
+import { getPlatformInfo, getUnsupportedPlatformMessage, isMac, supportsScreenshots } from "./platform.js";
 import { runScreenshot } from "./screenshot.js";
-import { getPlatformInfo, isMac, supportsScreenshots, getUnsupportedPlatformMessage } from "./platform.js";
 
 describe("screenshot-mcp", () => {
 	const createdFiles: string[] = [];

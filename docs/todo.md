@@ -74,11 +74,11 @@ Acceptance hints: All links working; new docs lint clean.
 
 ## 7. Tooling & DevEx
 
-- [ ] P1 S Add `qa` script running lint, typecheck, test sequentially.
-- [ ] P2 S Pin exact `zod` version (remove caret) & update lock.
-- [ ] P3 S Add `.editorconfig` mirroring Biome settings.
-- [ ] P3 S Enable import sorting in Biome config (if desired) & reformat.
-- [ ] P3 S Add `renovate.json` with basic schedule & dependency groups.
+- [x] P1 S Add `qa` script running lint, typecheck, test sequentially.
+- [x] P2 S Pin exact `zod` version (remove caret) & update lock.
+- [x] P3 S Add `.editorconfig` mirroring Biome settings.
+- [x] P3 S Enable import sorting in Biome config (if desired) & reformat.
+- [x] P3 S Add `renovate.json` with basic schedule & dependency groups.
 
 Acceptance hints: `bun run qa` passes; renovate config valid JSON.
 

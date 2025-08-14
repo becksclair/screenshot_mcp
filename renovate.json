@@ -1,0 +1,73 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:base"],
+	"schedule": ["before 6am on Monday"],
+	"timezone": "UTC",
+	"labels": ["dependencies"],
+	"assignees": [],
+	"reviewers": [],
+	"packageRules": [
+		{
+			"groupName": "MCP SDK",
+			"matchPackageNames": ["@modelcontextprotocol/sdk"],
+			"schedule": ["before 6am on Monday"],
+			"labels": ["mcp", "dependencies"]
+		},
+		{
+			"groupName": "Development Dependencies",
+			"matchDepTypes": ["devDependencies"],
+			"schedule": ["before 6am on Monday"],
+			"labels": ["dev-dependencies"],
+			"automerge": false
+		},
+		{
+			"groupName": "Runtime Dependencies",
+			"matchDepTypes": ["dependencies"],
+			"schedule": ["before 6am on Monday"],
+			"labels": ["runtime-dependencies"],
+			"automerge": false
+		},
+		{
+			"groupName": "Build Tools",
+			"matchPackageNames": ["@biomejs/biome", "typescript"],
+			"schedule": ["before 6am on Monday"],
+			"labels": ["build-tools"],
+			"automerge": false
+		},
+		{
+			"groupName": "Type Definitions",
+			"matchPackageNames": ["@types/*"],
+			"schedule": ["before 6am on Monday"],
+			"labels": ["types"],
+			"automerge": true,
+			"minimumReleaseAge": "3 days"
+		}
+	],
+	"vulnerabilityAlerts": {
+		"enabled": true,
+		"schedule": ["at any time"]
+	},
+	"lockFileMaintenance": {
+		"enabled": true,
+		"schedule": ["before 6am on Monday"]
+	},
+	"prConcurrentLimit": 3,
+	"prHourlyLimit": 2,
+	"separateMinorPatch": true,
+	"separateMajorMinor": true,
+	"rangeStrategy": "pin",
+	"semanticCommits": "enabled",
+	"semanticCommitType": "chore",
+	"semanticCommitScope": "deps",
+	"commitMessagePrefix": "🔄 ",
+	"prTitle": "{{semanticCommitType}}{{#if semanticCommitScope}}({{semanticCommitScope}}){{/if}}: {{commitMessagePrefix}}{{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}{{prettyNewMajor}}{{else}}{{#if isSingleVersion}}{{prettyNewVersion}}{{else}}{{#if newValue}}{{{newValue}}}{{else}}{{{newDigestShort}}}{{/if}}{{/if}}{{/if}}{{/if}}",
+	"gitIgnoredAuthors": [],
+	"ignoreDeps": [],
+	"major": {
+		"dependencyDashboard": true
+	},
+	"dependencyDashboard": true,
+	"dependencyDashboardTitle": "📋 Dependency Dashboard",
+	"dependencyDashboardHeader": "This dashboard shows all pending dependency updates for this repository.",
+	"configMigration": true
+}

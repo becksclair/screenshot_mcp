@@ -3,8 +3,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { runScreenshot } from "./screenshot.js";
 import { getPlatformInfo } from "./platform.js";
+import { runScreenshot } from "./screenshot.js";
 
 // Create an MCP server using the modern API
 const server = new McpServer({

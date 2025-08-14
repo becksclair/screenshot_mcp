@@ -1,0 +1,23 @@
+[install]
+# Install exact versions instead of ranges
+exact = true
+
+# Automatically install @types/ packages
+auto = true
+
+# Use the global cache
+cache = true
+
+[test]
+# Use the default test runner
+runner = "bun"
+
+# Set the timeout for tests
+timeout = 5000
+
+[build]
+# Enable sourcemaps for debugging
+sourcemap = "external"
+
+# Target Bun runtime specifically
+target = "bun"

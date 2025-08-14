@@ -19,7 +19,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.1.4",
     "@types/bun": "latest",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.2"
   },
   "engines": {
     "bun": ">=1.0.0"

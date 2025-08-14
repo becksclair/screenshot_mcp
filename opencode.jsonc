@@ -1,0 +1,33 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"provider": {
+		"lmstudio": {
+			"npm": "@ai-sdk/openai-compatible",
+			"name": "LM Studio (local)",
+			"options": {
+				"baseURL": "http://172.16.0.15:1234/v1"
+				// Optional: opencode can store a token under `opencode auth login`,
+				// but LM Studio ignores apiKey by default; it's fine to omit.
+				// "apiKey": "lm-studio"
+			},
+			"models": {
+				// Use EXACT id from `GET /v1/models`
+				"mistralai/devstral-small-2507": {
+					"name": "Devstral Small 2507 (local)"
+				}
+			}
+		},
+		"ollama": {
+			"npm": "@ai-sdk/openai-compatible",
+			"name": "Ollama (local)",
+			"options": {
+				"baseURL": "http://localhost:11434/v1"
+				// Ollama doesn't require an API key by default.
+				// If you added auth proxying, put "apiKey": "..." here.
+			},
+			"models": {
+				"gemma3:4b": { "name": "Gemma 3 (4B) — local" }
+			}
+		}
+	}
+}

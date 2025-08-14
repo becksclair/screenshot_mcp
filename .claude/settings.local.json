@@ -10,7 +10,14 @@
       "Bash(bun run:*)",
       "Bash(bun test:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(bun update:*)",
+      "Bash(bun add:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(bun remove:*)"
     ],
     "defaultMode": "acceptEdits"
   }

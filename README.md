@@ -64,8 +64,8 @@ The server provides a `take_screenshot` tool that:
 ```
 screenshot_mcp/
 ├── src/
-│   ├── index.ts          # Main MCP server
-│   └── index.test.ts     # Tests
+│   ├── index.ts          # Main MCP server using McpServer API
+│   └── index.test.ts     # Tests with modern API validation
 ├── winshot.sh            # Screenshot script
 ├── bunfig.toml           # Bun configuration
 ├── package.json          # Project metadata
@@ -74,8 +74,11 @@ screenshot_mcp/
 
 ## Features
 
-- ✨ Built with Bun for fast performance
-- 🔧 Uses Bun's native APIs (`Bun.spawn`, `import.meta.dir`)
-- 📸 Integrates with existing `winshot.sh` script
-- 🧪 Includes test suite with Bun's test runner
-- 📦 Optimized TypeScript configuration for Bun
+- ✨ Built with Bun for fast performance and modern JavaScript support
+- 🚀 Uses latest @modelcontextprotocol/sdk v1.17.2 with modern McpServer API
+- 🔧 Uses Bun's native APIs (`Bun.spawn`, `import.meta.dir`) for optimal performance
+- 📸 Integrates seamlessly with existing `winshot.sh` script for macOS screenshots
+- 🧪 Comprehensive test suite with Bun's fast test runner
+- 🔍 Zod schema validation for type-safe tool input handling
+- 📦 Optimized TypeScript configuration specifically for Bun runtime
+- 🎯 Modern MCP tool registration with `registerTool` API

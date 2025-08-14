@@ -1,63 +1,29 @@
 #!/usr/bin/env bun
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 import { join } from "path";
 
 const projectRoot = import.meta.dir;
 
-const server = new Server(
-  {
-    name: "screenshot-mcp",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
-
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "take_screenshot",
-        description: "Take a screenshot of the specified app and return the screenshot file path",
-        inputSchema: {
-          type: "object",
-          properties: {
-            appName: {
-              type: "string",
-              description: "The name of the app to screenshot (e.g., 'Visual Studio Code', 'Safari')",
-            },
-          },
-          required: ["appName"],
-        },
-      },
-    ],
-  };
+// Create an MCP server using the modern API
+const server = new McpServer({
+  name: "screenshot-mcp",
+  version: "1.0.0",
 });
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  if (request.params.name === "take_screenshot") {
-    const appName = request.params.arguments?.appName as string;
-    
-    if (!appName) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Error: appName parameter is required",
-          },
-        ],
-      };
-    }
-
+// Register the screenshot tool using the modern registerTool API
+server.registerTool(
+  "take_screenshot",
+  {
+    title: "Take Screenshot",
+    description: "Take a screenshot of the specified app and return the screenshot file path",
+    inputSchema: {
+      appName: z.string().describe("The name of the app to screenshot (e.g., 'Visual Studio Code', 'Safari')"),
+    },
+  },
+  async ({ appName }) => {
     try {
       const scriptPath = join(projectRoot, "..", "winshot.sh");
       
@@ -86,6 +52,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: `Screenshot failed: ${result.stderr || result.stdout}`,
             },
           ],
+          isError: true,
         };
       }
 
@@ -120,19 +87,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             text: `Error taking screenshot: ${error instanceof Error ? error.message : String(error)}`,
           },
         ],
+        isError: true,
       };
     }
   }
-
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Unknown tool: ${request.params.name}`,
-      },
-    ],
-  };
-});
+);
 
 async function main() {
   const transport = new StdioServerTransport();

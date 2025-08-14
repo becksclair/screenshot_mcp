@@ -17,7 +17,6 @@ fi
 APP_NAME="$1"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 SCREENSHOT_DIR="$HOME/Desktop/Screenshots"
-FILENAME="${SCREENSHOT_DIR}/screenshot_${ACTUAL_APP_NAME// /_}_${TIMESTAMP}.png"
 
 # Create screenshots directory if it doesn't exist
 mkdir -p "$SCREENSHOT_DIR"
@@ -81,6 +80,9 @@ if [[ "$ACTUAL_APP_NAME" == "NOT_FOUND" ]] || [[ "$ACTUAL_APP_NAME" == ERROR:* ]
 fi
 
 echo "✅ Found app: $ACTUAL_APP_NAME"
+
+# Now that we have the actual app name, construct the filename
+FILENAME="${SCREENSHOT_DIR}/screenshot_${ACTUAL_APP_NAME// /_}_${TIMESTAMP}.png"
 
 # Try to get window info and use different capture methods
 WINDOW_INFO=$(osascript << EOF

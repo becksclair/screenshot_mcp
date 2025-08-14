@@ -1,30 +1,30 @@
 {
-  "name": "screenshot-mcp",
-  "version": "1.0.0",
-  "description": "MCP server that provides screenshot functionality using winshot.sh",
-  "main": "src/index.ts",
-  "type": "module",
-  "scripts": {
-    "build": "bun build src/index.ts --target=bun --outdir=dist",
-    "start": "bun run src/index.ts",
-    "dev": "bun --watch src/index.ts",
-    "check": "biome check --write",
-    "test": "bun test",
-    "typecheck": "bun --bun tsc --noEmit"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "1.17.2",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.1.4",
-    "@types/bun": "latest",
-    "typescript": "^5.9.2"
-  },
-  "engines": {
-    "bun": ">=1.0.0"
-  },
-  "trustedDependencies": [
-    "@modelcontextprotocol/sdk"
-  ]
+	"name": "screenshot-mcp",
+	"version": "1.0.0",
+	"description": "MCP server that provides screenshot functionality using winshot.sh",
+	"main": "src/index.ts",
+	"type": "module",
+	"scripts": {
+		"build": "bun build src/index.ts --target=bun --outdir=dist",
+		"start": "bun run src/index.ts",
+		"dev": "bun --watch src/index.ts",
+		"check": "biome check --write",
+		"test": "bun test",
+		"typecheck": "bun --bun tsc --noEmit"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "1.17.2",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.1.4",
+		"@types/bun": "latest",
+		"typescript": "^5.9.2"
+	},
+	"engines": {
+		"bun": ">=1.0.0"
+	},
+	"trustedDependencies": [
+		"@modelcontextprotocol/sdk"
+	]
 }

@@ -11,11 +11,11 @@ Status legend: Priority (P1 critical, P2 important, P3 nice-to-have), Effort (S 
 
 ## 1. Reliability & Robustness
 
-- [ ] P1 S Export helper `runScreenshot(appName)` in `src/` and refactor tests to import it (no behavior change).
-- [ ] P1 S Add 15s timeout wrapper around `Bun.spawn`; kill process & return `[TIMEOUT]` error code on exceed.
-- [ ] P1 S Sanitize/escape `appName` (no shell interpolation) by passing as separate arg; add special char test.
-- [ ] P1 S Platform guard: if `process.platform !== 'darwin'` return isError with clear "macOS only" message.
-- [ ] P2 S After capture, `existsSync(path)` verify file; if missing, return warning message instead of success.
+- [x] P1 S Export helper `runScreenshot(appName)` in `src/` and refactor tests to import it (no behavior change).
+- [x] P1 S Add 15s timeout wrapper around `Bun.spawn`; kill process & return `[TIMEOUT]` error code on exceed.
+- [x] P1 S Sanitize/escape `appName` (no shell interpolation) by passing as separate arg; add special char test.
+- [x] P1 S Platform guard: if `process.platform !== 'darwin'` return isError with clear "macOS only" message.
+- [x] P2 S After capture, `existsSync(path)` verify file; if missing, return warning message instead of success.
 - [ ] P2 S Introduce error code tagging `[NOT_FOUND]`, `[PERMISSION]`, `[PARSE]`, `[TIMEOUT]` in responses.
 - [ ] P2 M Enhance script output parsing: map NOT_FOUND vs PERMISSION vs GENERIC for guidance.
 - [ ] P3 S Respect `SKIP_OPEN=1` env var: suppress auto `open` call in `winshot.sh`.
@@ -92,8 +92,8 @@ Acceptance hints: Logs parse as JSON; stats tool returns counts.
 
 ## 9. Security & Safety
 
-- [ ] P1 S Add zod max length 100 to `appName` schema + failing test for >100.
-- [ ] P1 S Add test ensuring special characters not executed (literal screenshot attempt).
+- [x] P1 S Add zod max length 100 to `appName` schema + failing test for >100.
+- [x] P1 S Add test ensuring special characters not executed (literal screenshot attempt).
 - [ ] P2 S Add `SECURITY.md` with disclosure process & scope.
 - [ ] P3 M Implement optional `ALLOWED_APPS` (CSV) allowlist check before spawn.
 

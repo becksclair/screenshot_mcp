@@ -146,12 +146,12 @@ fi
 
 if [ -f "$FILENAME" ]; then
     echo "📸 Screenshot saved: $FILENAME"
-    
+
     # Optional compression with COMPRESS=1 environment variable
     if [ "${COMPRESS:-}" = "1" ]; then
         echo "🗜️  Compressing PNG file..."
         ORIGINAL_SIZE=$(stat -f%z "$FILENAME")
-        
+
         # Use sips to optimize PNG compression
         # Create a temporary file for compression
         TEMP_PNG="${FILENAME%.png}_temp.png"
@@ -165,9 +165,8 @@ if [ -f "$FILENAME" ]; then
             echo "⚠️  Compression failed, using original file"
         fi
     fi
-    
-    echo "🎉 Done! Opening screenshot..."
-    open "$FILENAME"
+
+    echo "🎉 Done!"
 else
     echo "❌ Failed to capture screenshot"
     exit 1

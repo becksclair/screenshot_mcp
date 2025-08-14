@@ -13,7 +13,7 @@ export interface ScreenshotResult {
 	isError?: boolean;
 }
 
-export async function runScreenshot(appName: string): Promise<ScreenshotResult> {
+export async function runScreenshot(appName: string, options?: { compress?: boolean }): Promise<ScreenshotResult> {
 	try {
 		// Platform guard - only macOS is supported
 		if (process.platform !== "darwin") {
@@ -30,10 +30,17 @@ export async function runScreenshot(appName: string): Promise<ScreenshotResult> 
 
 		const scriptPath = join(projectRoot, "..", "winshot.sh");
 
+		// Set up environment variables
+		const env = { ...process.env };
+		if (options?.compress) {
+			env.COMPRESS = "1";
+		}
+
 		const proc = Bun.spawn(["bash", scriptPath, appName], {
 			stdout: "pipe",
 			stderr: "pipe",
-			stdin: "ignore"
+			stdin: "ignore",
+			env
 		});
 
 		// Create a timeout promise that rejects after 15 seconds

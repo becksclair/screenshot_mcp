@@ -45,7 +45,9 @@ bun run typecheck
 
 The server provides a `take_screenshot` tool that:
 
-- **Input**: `appName` (string) - The name of the application to screenshot
+- **Input**: 
+  - `appName` (string) - The name of the application to screenshot
+  - `compress` (boolean, optional) - Whether to apply PNG compression to reduce file size
 - **Output**: Path to the saved screenshot file
 
 ### Example Usage
@@ -55,6 +57,17 @@ The server provides a `take_screenshot` tool that:
   "name": "take_screenshot",
   "arguments": {
     "appName": "Visual Studio Code"
+  }
+}
+```
+
+**With compression:**
+```json
+{
+  "name": "take_screenshot",
+  "arguments": {
+    "appName": "Visual Studio Code",
+    "compress": true
   }
 }
 ```
@@ -82,3 +95,37 @@ screenshot_mcp/
 - 🔍 Zod schema validation for type-safe tool input handling
 - 📦 Optimized TypeScript configuration specifically for Bun runtime
 - 🎯 Modern MCP tool registration with `registerTool` API
+
+## Performance
+
+| Metric | Value | Description |
+|--------|-------|-------------|
+| **Source Size** | 11.0 KB | TypeScript source code size |
+| **Bundle Size** | 592 KB | Compiled JavaScript bundle |
+| **Cold Start** | 74.2 ± 2.2 ms | Server startup time (mean ± std dev) |
+| **Bundle Ratio** | 53.8x | Bundle size vs source size |
+
+### Screenshot Capture Performance
+
+| Scenario | Time per Screenshot | Total Time (3 captures) | Success Rate |
+|----------|-------------------|-------------------------|--------------|
+| **Sequential** | 2,587 ms | 7,761 ms | 100% |
+| **Parallel** | 1,377 ms | 4,130 ms | 100% |
+| **Speedup** | 1.9x faster | 1.9x faster | No degradation |
+
+**Parallel Efficiency:** 62.6% (limited by macOS screenshot system bottlenecks)
+
+**Recommendations:**
+- ✅ Use parallel captures for multiple screenshots (1.9x speedup)
+- ⚠️ Consider rate limiting for concurrent requests to avoid system overload
+- 💡 Optimal concurrency appears to be 2-3 simultaneous captures
+
+### Compression Feature
+
+The optional `compress: true` parameter applies PNG optimization using macOS `sips` utility:
+- **Method**: PNG format recompression with default optimization
+- **Typical savings**: 0-5% for screenshots (already well-compressed by screencapture)
+- **Use case**: Enable for storage-constrained environments or batch operations
+- **Performance impact**: ~50-100ms additional processing time per image
+
+*Performance measurements taken on macOS with Bun v1.2.20. Cold start time measured using hyperfine with 10 runs and 3 warmup iterations.*

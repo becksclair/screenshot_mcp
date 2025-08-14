@@ -21,11 +21,15 @@ server.registerTool(
 			appName: z
 				.string()
 				.max(100)
-				.describe("The name of the app to screenshot (e.g., 'Visual Studio Code', 'Safari')")
+				.describe("The name of the app to screenshot (e.g., 'Visual Studio Code', 'Safari')"),
+			compress: z
+				.boolean()
+				.optional()
+				.describe("Whether to compress the PNG file to reduce size (default: false)")
 		}
 	},
-	async ({ appName }) => {
-		return await runScreenshot(appName);
+	async ({ appName, compress }) => {
+		return await runScreenshot(appName, { compress });
 	}
 );
 

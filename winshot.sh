@@ -146,6 +146,26 @@ fi
 
 if [ -f "$FILENAME" ]; then
     echo "📸 Screenshot saved: $FILENAME"
+    
+    # Optional compression with COMPRESS=1 environment variable
+    if [ "${COMPRESS:-}" = "1" ]; then
+        echo "🗜️  Compressing PNG file..."
+        ORIGINAL_SIZE=$(stat -f%z "$FILENAME")
+        
+        # Use sips to optimize PNG compression
+        # Create a temporary file for compression
+        TEMP_PNG="${FILENAME%.png}_temp.png"
+        if sips -s format png --setProperty formatOptions default "$FILENAME" --out "$TEMP_PNG" &>/dev/null && \
+           mv "$TEMP_PNG" "$FILENAME" &>/dev/null; then
+            COMPRESSED_SIZE=$(stat -f%z "$FILENAME")
+            SAVINGS=$((ORIGINAL_SIZE - COMPRESSED_SIZE))
+            PERCENTAGE=$((SAVINGS * 100 / ORIGINAL_SIZE))
+            echo "✅ Compression complete: ${ORIGINAL_SIZE} bytes → ${COMPRESSED_SIZE} bytes (saved ${SAVINGS} bytes, ${PERCENTAGE}%)"
+        else
+            echo "⚠️  Compression failed, using original file"
+        fi
+    fi
+    
     echo "🎉 Done! Opening screenshot..."
     open "$FILENAME"
 else

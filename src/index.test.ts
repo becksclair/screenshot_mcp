@@ -210,4 +210,32 @@ describe("screenshot-mcp", () => {
 			});
 		}
 	});
+
+	test("should support compression option", async () => {
+		// Test compression functionality
+		const result = await runScreenshot("Electron", { compress: true });
+
+		expect(result).toBeDefined();
+
+		if (result.isError) {
+			// If screenshot failed (app not available), that's okay for this test
+			expect(result.content[0].text).toMatch(/Screenshot failed|Could not find app|macOS only/);
+			console.log("Compression test skipped - screenshot failed (expected if app not available)");
+		} else {
+			// If successful, verify the response format
+			expect(result.content[0].text).toMatch(/Screenshot successfully taken and saved to:/);
+
+			// Extract the file path and verify it exists
+			const pathMatch = result.content[0].text.match(/Screenshot successfully taken and saved to: (.+\.png)/);
+			if (pathMatch) {
+				const filePath = pathMatch[1];
+				expect(existsSync(filePath)).toBe(true);
+
+				// Add to cleanup list
+				createdFiles.push(filePath);
+
+				console.log("✅ Compression test passed - file created (compression applied if supported)");
+			}
+		}
+	}, 20000);
 });

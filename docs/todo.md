@@ -24,9 +24,9 @@ Acceptance hints: All new error codes documented; tests cover timeout + non-darw
 
 ## 2. Performance
 
-- [ ] P3 S Measure current bundled size & cold start time; record in README Performance section.
-- [ ] P3 M Benchmark multiple sequential vs parallel captures (doc results & any limits).
-- [ ] P3 S Add optional `COMPRESS=1` path invoking `sips -s formatOptions 100` to shrink PNG; verify output.
+- [x] P3 S Measure current bundled size & cold start time; record in README Performance section.
+- [x] P3 M Benchmark multiple sequential vs parallel captures (doc results & any limits).
+- [x] P3 S Add optional `COMPRESS=1` path invoking `sips -s formatOptions 100` to shrink PNG; verify output.
 
 Acceptance hints: README gains performance table; compression flag documented & tested for existence.
 

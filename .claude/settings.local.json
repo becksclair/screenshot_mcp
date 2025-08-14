@@ -17,7 +17,11 @@
 			"Bash(bun add:*)",
 			"Bash(grep:*)",
 			"Bash(cat:*)",
-			"Bash(bun remove:*)"
+			"Bash(bun remove:*)",
+			"Bash(hyperfine:*)",
+			"Bash(bun:*)",
+			"Bash(COMPRESS=1 ./winshot.sh Electron)",
+			"Bash(sips:*)"
 		],
 		"defaultMode": "acceptEdits"
 	}

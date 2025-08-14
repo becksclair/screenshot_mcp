@@ -113,7 +113,7 @@ screenshot_mcp/
 ├── src/
 │   ├── index.ts          # Main MCP server
 │   └── index.test.ts     # Test suite
-├── winshot.sh            # Screenshot script
+├── src/winshot.ts        # Pure TypeScript screenshot implementation (replaces prior shell script)
 ├── dist/                 # Built binaries
 └── package.json          # Build scripts
 ```

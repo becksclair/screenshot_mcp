@@ -13,40 +13,41 @@ const server = new McpServer({
 });
 
 // Register the screenshot tool using the modern registerTool API
+const takeScreenshotSchema = {
+	appName: z.string().max(100).describe("The name of the app to screenshot (e.g., 'Visual Studio Code', 'Safari')"),
+	compress: z.boolean().optional().describe("Whether to compress the PNG file to reduce size (default: false)"),
+	format: z.enum(["png"]).optional().default("png").describe("Screenshot format (currently only 'png' is supported)"),
+	windowStrategy: z
+		.enum(["auto", "id", "bounds", "interactive"])
+		.optional()
+		.default("auto")
+		.describe(
+			"Window capture strategy: 'auto' (smart detection), 'id' (window ID), 'bounds' (window bounds), 'interactive' (user selection)"
+		),
+	returnData: z
+		.boolean()
+		.optional()
+		.describe("If true, return base64 encoded image data instead of file path (size limit: 1MB, default: false)")
+} as const;
+
 server.registerTool(
 	"take_screenshot",
 	{
 		title: "Take Screenshot",
 		description: "Take a screenshot of the specified app and return the screenshot file path",
-		inputSchema: {
-			appName: z
-				.string()
-				.max(100)
-				.describe("The name of the app to screenshot (e.g., 'Visual Studio Code', 'Safari')"),
-			compress: z
-				.boolean()
-				.optional()
-				.describe("Whether to compress the PNG file to reduce size (default: false)"),
-			format: z
-				.enum(["png"])
-				.optional()
-				.default("png")
-				.describe("Screenshot format (currently only 'png' is supported)"),
-			windowStrategy: z
-				.enum(["auto", "id", "bounds", "interactive"])
-				.optional()
-				.default("auto")
-				.describe(
-					"Window capture strategy: 'auto' (smart detection), 'id' (window ID), 'bounds' (window bounds), 'interactive' (user selection)"
-				),
-			returnData: z
-				.boolean()
-				.optional()
-				.describe("If true, return base64 encoded image data instead of file path (size limit: 1MB, default: false)")
-		}
+		// Provide raw shape; SDK performs minimal validation, we still parse with Zod inside
+		// @ts-expect-error SDK raw shape typing mismatch; using zod schemas internally
+		inputSchema: takeScreenshotSchema
 	},
-	async ({ appName, compress, format, windowStrategy, returnData }) => {
-		// Validate format (should already be validated by Zod, but double-check)
+	async (args: Record<string, unknown>) => {
+		const parsed = z.object(takeScreenshotSchema).safeParse(args);
+		if (!parsed.success) {
+			return {
+				content: [{ type: "text", text: `Screenshot failed: Invalid input - ${parsed.error.message}` }],
+				isError: true
+			} as const;
+		}
+		const { appName, compress, format, windowStrategy, returnData } = parsed.data;
 		if (format && format !== "png") {
 			return {
 				content: [
@@ -56,9 +57,8 @@ server.registerTool(
 					}
 				],
 				isError: true
-			};
+			} as const;
 		}
-
 		return await runScreenshot(appName, { compress, windowStrategy, returnData });
 	}
 );
@@ -69,51 +69,50 @@ server.registerTool(
 	{
 		title: "List Running Apps",
 		description: "Get a JSON array of currently running applications with visible windows",
+		// empty schema
 		inputSchema: {}
 	},
-	async () => {
-		return await listRunningApps();
-	}
+	async () => await listRunningApps()
 );
 
 // Register the capture_region tool
+const captureRegionSchema = {
+	x: z
+		.number()
+		.int()
+		.min(0)
+		.describe("X coordinate of the top-left corner of the region (must be non-negative integer)"),
+	y: z
+		.number()
+		.int()
+		.min(0)
+		.describe("Y coordinate of the top-left corner of the region (must be non-negative integer)"),
+	width: z.number().int().min(1).describe("Width of the region to capture in pixels (must be positive integer)"),
+	height: z.number().int().min(1).describe("Height of the region to capture in pixels (must be positive integer)"),
+	compress: z.boolean().optional().describe("Whether to compress the PNG file to reduce size (default: false)"),
+	returnData: z
+		.boolean()
+		.optional()
+		.describe("If true, return base64 encoded image data instead of file path (size limit: 1MB, default: false)")
+} as const;
+
 server.registerTool(
 	"capture_region",
 	{
 		title: "Capture Screen Region",
 		description: "Capture a specific rectangular region of the screen by coordinates",
-		inputSchema: {
-			x: z
-				.number()
-				.int()
-				.min(0)
-				.describe("X coordinate of the top-left corner of the region (must be non-negative integer)"),
-			y: z
-				.number()
-				.int()
-				.min(0)
-				.describe("Y coordinate of the top-left corner of the region (must be non-negative integer)"),
-			width: z
-				.number()
-				.int()
-				.min(1)
-				.describe("Width of the region to capture in pixels (must be positive integer)"),
-			height: z
-				.number()
-				.int()
-				.min(1)
-				.describe("Height of the region to capture in pixels (must be positive integer)"),
-			compress: z
-				.boolean()
-				.optional()
-				.describe("Whether to compress the PNG file to reduce size (default: false)"),
-			returnData: z
-				.boolean()
-				.optional()
-				.describe("If true, return base64 encoded image data instead of file path (size limit: 1MB, default: false)")
-		}
+		// @ts-expect-error SDK raw shape typing mismatch; using zod schemas internally
+		inputSchema: captureRegionSchema
 	},
-	async ({ x, y, width, height, compress, returnData }) => {
+	async (args: Record<string, unknown>) => {
+		const parsed = z.object(captureRegionSchema).safeParse(args);
+		if (!parsed.success) {
+			return {
+				content: [{ type: "text", text: `Region capture failed: Invalid input - ${parsed.error.message}` }],
+				isError: true
+			} as const;
+		}
+		const { x, y, width, height, compress, returnData } = parsed.data;
 		return await captureRegion(x, y, width, height, { compress, returnData });
 	}
 );

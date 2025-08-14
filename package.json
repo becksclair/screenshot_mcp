@@ -1,7 +1,7 @@
 {
 	"name": "screenshot-mcp",
 	"version": "1.0.0",
-	"description": "MCP server that provides screenshot functionality using winshot.sh",
+	"description": "MCP server that provides fast macOS screenshot tools (pure TypeScript, Bun)",
 	"main": "src/index.ts",
 	"type": "module",
 	"scripts": {

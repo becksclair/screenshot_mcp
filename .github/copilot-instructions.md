@@ -1,21 +1,21 @@
 # Copilot Instructions: screenshot-mcp
 
-Purpose: Fast Bun-based MCP server exposing a single screenshot tool (take_screenshot) that shells out to winshot.sh on macOS.
+Purpose: Fast Bun-based MCP server exposing screenshot tools (take_screenshot, list_running_apps, capture_region) implemented purely in TypeScript (no shell script) on macOS.
 Keep responses concrete, reflect existing patterns, and prefer minimal changes.
 
 ## Core Architecture
 
 - Entry point: `src/index.ts` (also executable via shebang `#!/usr/bin/env bun`).
 - Uses modern `McpServer` API from `@modelcontextprotocol/sdk` v1.17.2 with `StdioServerTransport`.
-- Single registered tool: `take_screenshot`.
-- Tool logic: spawn `bash winshot.sh <appName>` using `Bun.spawn`, capture stdout/stderr, parse a line matching `Screenshot saved: <path>.png`.
+- Tools: `take_screenshot`, `list_running_apps`, `capture_region`.
+- Screenshot logic: direct TypeScript (`src/winshot.ts`) spawns `osascript` + `screencapture`, parses output, selects strategy, optional compression & base64.
 - Zod provides input validation (simple string schema with description). Keep using Zod for any new tool inputs.
 - Tests (`src/index.test.ts`) duplicate screenshot logic for integration-style verification; they don't invoke the server object directly.
 
 ## Conventions & Patterns
 
 - Runtime: Bun (ESM, TypeScript). Avoid Node-only APIs unless Bun supports them.
-- Paths: Build script path via `join(import.meta.dir, "..", "winshot.sh")` (import.meta.dir resolves to `src/`). Preserve this relative computation.
+- Paths: All logic lives in TS; no external script path needed. Keep relative imports within `src/`.
 - Error handling: Return `{ content: [{ type: 'text', text }], isError: true }` for failures rather than throwing so the MCP layer surfaces readable messages.
 - Success response: single text item summarizing path; no binary streaming implemented.
 - Output parsing: Regex `/Screenshot saved: (.+\.png)/` — if it fails, treat as soft success (no isError) but explain inability to determine path.
@@ -53,9 +53,11 @@ When adding a new tool:
 - Missing parseable screenshot path -> non-error informational response.
 - Invalid input types rejected by Zod before handler runs.
 
-## Script Integration (`winshot.sh`)
+## Implementation Notes (`winshot.ts`)
 
-- Assumed to output a line beginning with `Screenshot saved:` followed by absolute PNG path. If modifying script, ensure this contract remains or update regex & tests.
+- Provides `screenshotApp(appName, {strategy, compress, returnData})` returning structured result.
+- Strategies: auto|id|bounds|interactive with fallbacks; maintains verbose status lines for potential future logging.
+- Base64 size gate ~1MB; large images return file path only.
 
 ## TypeScript & Build
 

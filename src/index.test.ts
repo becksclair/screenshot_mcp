@@ -1,6 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getPlatformInfo, getUnsupportedPlatformMessage, isMac, supportsScreenshots } from "./platform.js";
@@ -29,11 +28,7 @@ describe("screenshot-mcp", () => {
 		expect(typeof import.meta.dir).toBe("string");
 	});
 
-	test("should be able to construct script path", () => {
-		const scriptPath = join(import.meta.dir, "..", "winshot.sh");
-		expect(scriptPath).toContain("winshot.sh");
-		expect(existsSync(scriptPath)).toBe(true);
-	});
+	// Removed legacy winshot.sh script path test after migrating to pure TypeScript implementation (winshot.ts)
 
 	test("should create MCP server with modern API", () => {
 		const server = new McpServer({
@@ -51,17 +46,19 @@ describe("screenshot-mcp", () => {
 		});
 
 		// Register a test tool to verify the API works
+		interface TestToolArgs {
+			message?: string;
+		}
 		server.registerTool(
 			"test_tool",
 			{
 				title: "Test Tool",
 				description: "A test tool for validation",
-				inputSchema: {
-					message: z.string().describe("A test message")
-				}
+				// minimal schema
+				inputSchema: {}
 			},
-			async ({ message }) => ({
-				content: [{ type: "text", text: `Echo: ${message}` }]
+			async (args: TestToolArgs) => ({
+				content: [{ type: "text", text: `Echo: ${args.message ?? ""}` }]
 			})
 		);
 
@@ -468,7 +465,7 @@ describe("screenshot-mcp", () => {
 			console.log("Base64 screenshot test skipped - platform not supported");
 		} else {
 			const responseText = result.content[0].text;
-			
+
 			if (responseText.includes("too large for base64 encoding")) {
 				// File was too large, which is acceptable
 				expect(responseText).toMatch(/Screenshot file too large for base64 encoding.*Use returnData=false/);
@@ -476,16 +473,20 @@ describe("screenshot-mcp", () => {
 				console.log("✅ Base64 test passed - file too large, returned path instead");
 			} else {
 				// Should contain base64 data URI
-				expect(responseText).toMatch(/Screenshot successfully captured as base64 data.*data:image\/png;base64,/);
-				
+				expect(responseText).toMatch(
+					/Screenshot successfully captured as base64 data.*data:image\/png;base64,/
+				);
+
 				// Extract the base64 data
-				const dataUriMatch = responseText.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
+				const dataUriRegex = /data:image\/png;base64,([A-Za-z0-9+/=]+)/;
+				const dataUriMatch = dataUriRegex.exec(responseText);
 				expect(dataUriMatch).toBeTruthy();
-				
 				if (dataUriMatch) {
 					const base64Data = dataUriMatch[1];
 					expect(base64Data.length).toBeGreaterThan(100); // Should have substantial base64 data
-					console.log(`✅ Base64 screenshot test passed - ${Math.round(base64Data.length / 1024)} KB base64 data returned`);
+					console.log(
+						`✅ Base64 screenshot test passed - ${Math.round(base64Data.length / 1024)} KB base64 data returned`
+					);
 				}
 			}
 		}
@@ -502,24 +503,30 @@ describe("screenshot-mcp", () => {
 			console.log("Base64 region capture test skipped - platform not supported");
 		} else {
 			const responseText = result.content[0].text;
-			
+
 			if (responseText.includes("too large for base64 encoding")) {
 				// File was too large (shouldn't happen with 50x50 region, but possible)
-				expect(responseText).toMatch(/Region screenshot file too large for base64 encoding.*Use returnData=false/);
+				expect(responseText).toMatch(
+					/Region screenshot file too large for base64 encoding.*Use returnData=false/
+				);
 				expect(responseText).toMatch(/File saved to:/);
 				console.log("✅ Base64 region test passed - file too large, returned path instead");
 			} else {
 				// Should contain base64 data URI
-				expect(responseText).toMatch(/Region screenshot successfully captured as base64 data.*data:image\/png;base64,/);
-				
+				expect(responseText).toMatch(
+					/Region screenshot successfully captured as base64 data.*data:image\/png;base64,/
+				);
+
 				// Extract the base64 data
-				const dataUriMatch = responseText.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
+				const dataUriRegex = /data:image\/png;base64,([A-Za-z0-9+/=]+)/;
+				const dataUriMatch = dataUriRegex.exec(responseText);
 				expect(dataUriMatch).toBeTruthy();
-				
 				if (dataUriMatch) {
 					const base64Data = dataUriMatch[1];
 					expect(base64Data.length).toBeGreaterThan(50); // Small region should have some base64 data
-					console.log(`✅ Base64 region capture test passed - ${Math.round(base64Data.length / 1024)} KB base64 data returned`);
+					console.log(
+						`✅ Base64 region capture test passed - ${Math.round(base64Data.length / 1024)} KB base64 data returned`
+					);
 				}
 			}
 		}

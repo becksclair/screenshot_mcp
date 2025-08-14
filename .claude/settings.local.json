@@ -1,33 +1,31 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(mkdir:*)",
-      "Bash(npm install)",
-      "Bash(npm run build:*)",
-      "Bash(chmod:*)",
-      "Bash(rm:*)",
-      "Bash(bun install:*)",
-      "Bash(bun run:*)",
-      "Bash(bun test:*)",
-      "Bash(git init:*)",
-      "Bash(git add:*)",
-      "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs",
-      "Bash(bun update:*)",
-      "Bash(bun add:*)",
-      "Bash(grep:*)",
-      "Bash(cat:*)",
-      "Bash(bun remove:*)",
-      "Bash(hyperfine:*)",
-      "Bash(bun:*)",
-      "Bash(COMPRESS=1 ./winshot.sh Electron)",
-      "Bash(sips:*)",
-      "Bash(WINDOW_STRATEGY=bounds ./winshot.sh Electron)",
-      "mcp__sequential-thinking__sequentialthinking",
-      "WebSearch",
-      "WebFetch(domain:bun.com)",
-      "Bash(lipo:*)"
-    ],
-    "defaultMode": "acceptEdits"
-  }
+	"permissions": {
+		"allow": [
+			"Bash(mkdir:*)",
+			"Bash(npm install)",
+			"Bash(npm run build:*)",
+			"Bash(chmod:*)",
+			"Bash(rm:*)",
+			"Bash(bun install:*)",
+			"Bash(bun run:*)",
+			"Bash(bun test:*)",
+			"Bash(git init:*)",
+			"Bash(git add:*)",
+			"mcp__context7__resolve-library-id",
+			"mcp__context7__get-library-docs",
+			"Bash(bun update:*)",
+			"Bash(bun add:*)",
+			"Bash(grep:*)",
+			"Bash(cat:*)",
+			"Bash(bun remove:*)",
+			"Bash(hyperfine:*)",
+			"Bash(bun:*)",
+			"Bash(sips:*)",
+			"mcp__sequential-thinking__sequentialthinking",
+			"WebSearch",
+			"WebFetch(domain:bun.com)",
+			"Bash(lipo:*)"
+		],
+		"defaultMode": "acceptEdits"
+	}
 }

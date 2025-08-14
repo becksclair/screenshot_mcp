@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 import { getUnsupportedPlatformMessage, supportsScreenshots } from "./platform.js";
+// Removed direct shell script spawning; now delegate to TypeScript implementation
+import { screenshotApp } from "./winshot.js";
 
+// projectRoot retained only if future relative path needs; no longer used for runScreenshot
 const projectRoot = import.meta.dir;
 
 export interface ScreenshotResult {
@@ -42,131 +44,42 @@ export async function runScreenshot(
 			};
 		}
 
-		const scriptPath = join(projectRoot, "..", "winshot.sh");
-
-		// Set up environment variables
-		const env = { ...process.env };
-		if (options?.compress) {
-			env.COMPRESS = "1";
-		}
-		if (options?.windowStrategy) {
-			env.WINDOW_STRATEGY = options.windowStrategy;
-		}
-
-		const proc = Bun.spawn(["bash", scriptPath, appName], {
-			stdout: "pipe",
-			stderr: "pipe",
-			stdin: "ignore",
-			env
+		// Delegate to TypeScript implementation to avoid shelling out
+		const result = await screenshotApp(appName, {
+			compress: options?.compress,
+			strategy: options?.windowStrategy,
+			returnData: options?.returnData
 		});
 
-		// Create a timeout promise that rejects after 15 seconds
-		const timeoutPromise = new Promise<never>((_, reject) => {
-			setTimeout(() => {
-				proc.kill(); // Kill the process
-				reject(new Error("[TIMEOUT]"));
-			}, 15000); // 15 seconds
-		});
-
-		// Race between the process completion and timeout
-		const result = await Promise.race([
-			Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]).then(
-				([stdout, stderr, code]) => ({ stdout, stderr, code })
-			),
-			timeoutPromise
-		]);
-
-		if (result.code !== 0) {
+		if (!result.success) {
 			return {
-				content: [
-					{
-						type: "text",
-						text: `Screenshot failed: ${result.stderr || result.stdout}`
-					}
-				],
+				content: [{ type: "text", text: `Screenshot failed: ${result.error || "Unknown error"}` }],
 				isError: true
 			};
 		}
 
-		// Extract the screenshot path from the output
-		const screenshotMatch = result.stdout.match(/Screenshot saved: (.+\.png)/);
-		const screenshotPath = screenshotMatch ? screenshotMatch[1] : null;
-
-		if (!screenshotPath) {
+		// If base64 requested and supplied
+		if (options?.returnData && result.dataUri) {
+			// Provide same style messaging used previously
+			const sizeKb = result.tooLargeForData ? "(too large)" : "";
 			return {
 				content: [
 					{
 						type: "text",
-						text: `Screenshot taken but could not determine file path. Output: ${result.stdout}`
+						text: result.tooLargeForData
+							? `Screenshot file too large for base64 encoding. File saved to: ${result.path}`
+							: `Screenshot successfully captured as base64 data ${sizeKb}: ${result.dataUri}`
 					}
 				]
 			};
 		}
 
-		// Verify the file actually exists
-		if (!existsSync(screenshotPath)) {
-			return {
-				content: [
-					{
-						type: "text",
-						text: `Screenshot appears to have been taken but file not found at expected location: ${screenshotPath}. The capture may have failed silently.`
-					}
-				],
-				isError: false // This is a warning, not a hard error
-			};
-		}
-
-		// Handle returnData option for base64 encoding
-		if (options?.returnData) {
-			try {
-				// Check file size (1MB = 1024 * 1024 bytes)
-				const stats = statSync(screenshotPath);
-				const fileSizeInBytes = stats.size;
-				const maxSizeInBytes = 1024 * 1024; // 1MB
-
-				if (fileSizeInBytes > maxSizeInBytes) {
-					return {
-						content: [
-							{
-								type: "text",
-								text: `Screenshot file too large for base64 encoding (${Math.round(fileSizeInBytes / 1024)} KB > 1024 KB limit). Use returnData=false to get file path instead. File saved to: ${screenshotPath}`
-							}
-						],
-						isError: false
-					};
-				}
-
-				// Read the file and encode as base64
-				const fileBuffer = readFileSync(screenshotPath);
-				const base64Data = fileBuffer.toString('base64');
-				const dataUri = `data:image/png;base64,${base64Data}`;
-
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Screenshot successfully captured as base64 data (${Math.round(fileSizeInBytes / 1024)} KB): ${dataUri}`
-						}
-					]
-				};
-			} catch (readError) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Screenshot taken and saved to: ${screenshotPath}, but failed to read file for base64 encoding: ${readError instanceof Error ? readError.message : String(readError)}`
-						}
-					],
-					isError: false // File was created successfully, just couldn't encode
-				};
-			}
-		}
-
+		// Normal success path
 		return {
 			content: [
 				{
 					type: "text",
-					text: `Screenshot successfully taken and saved to: ${screenshotPath}`
+					text: `Screenshot successfully taken and saved to: ${result.path}`
 				}
 			]
 		};
@@ -455,7 +368,7 @@ export async function captureRegion(
 
 				// Read the file and encode as base64
 				const fileBuffer = readFileSync(filename);
-				const base64Data = fileBuffer.toString('base64');
+				const base64Data = fileBuffer.toString("base64");
 				const dataUri = `data:image/png;base64,${base64Data}`;
 
 				return {

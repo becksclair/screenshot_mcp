@@ -18,7 +18,6 @@ Status legend: Priority (P1 critical, P2 important, P3 nice-to-have), Effort (S 
 - [x] P2 S After capture, `existsSync(path)` verify file; if missing, return warning message instead of success.
 - [ ] P2 S Introduce error code tagging `[NOT_FOUND]`, `[PERMISSION]`, `[PARSE]`, `[TIMEOUT]` in responses.
 - [ ] P2 M Enhance script output parsing: map NOT_FOUND vs PERMISSION vs GENERIC for guidance.
-- [ ] P3 S Respect `SKIP_OPEN=1` env var: suppress auto `open` call in `winshot.sh`.
 
 Acceptance hints: All new error codes documented; tests cover timeout + non-darwin guard + sanitization.
 

@@ -40,9 +40,9 @@ This is a Model Context Protocol (MCP) server that provides screenshot functiona
 
 ### Core Components
 
-- **MCP Server** (`src/index.ts`): Built using the modern `@modelcontextprotocol/sdk` v1.17.2 with the `McpServer` class and `registerTool` API
-- **Screenshot Tool**: Exposes a `take_screenshot` tool that accepts an `appName` parameter
-- **Shell Script Integration** (`winshot.sh`): Handles the actual screenshot capture using macOS-specific AppleScript and `screencapture`
+- **MCP Server** (`src/index.ts`): Built using the modern `@modelcontextprotocol/sdk` v1.17.2 with the `McpServer` class and `registerTool` API.
+- **Screenshot Tools**: `take_screenshot`, `list_running_apps`, `capture_region` exposed via the server.
+- **Pure TypeScript Implementation** (`src/winshot.ts`): Replaces the earlier shell script. Handles app discovery (AppleScript), strategy selection (window id / bounds / interactive / fallback), screencapture invocation, optional compression, and base64 encoding.
 
 ### Key Technical Details
 
@@ -53,11 +53,12 @@ This is a Model Context Protocol (MCP) server that provides screenshot functiona
 
 ### Screenshot Flow
 
-1. Tool receives `appName` parameter
-2. Executes `winshot.sh` script via `Bun.spawn`
-3. Script uses AppleScript to find running app (case-insensitive matching)
-4. Captures screenshot using various methods (window ID, bounds, or interactive)
-5. Returns file path or error message
+1. Tool receives validated parameters (Zod schemas in `index.ts`).
+2. `runScreenshot` delegates to `screenshotApp` in `winshot.ts` (no shell script).
+3. AppleScript enumerates processes and window data.
+4. Strategy chosen (auto → window id → bounds → interactive → frontmost fallback).
+5. `screencapture` runs; optional compression via `sips`.
+6. Result mapped to MCP tool response (file path or base64 data URI, size-limited).
 
 ### Testing Strategy
 
@@ -76,6 +77,6 @@ This is a Model Context Protocol (MCP) server that provides screenshot functiona
 
 ## Platform Requirements
 
-- macOS (required for `winshot.sh` script functionality)
+- macOS (current implementation relies on AppleScript + `screencapture`)
 - Bun >= 1.0.0
-- Applications must be running to be screenshotted
+- Target application must be running and have a window (else interactive fallback)

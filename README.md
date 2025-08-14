@@ -139,3 +139,136 @@ The optional `compress: true` parameter applies PNG optimization using macOS `si
 - **Performance impact**: ~50-100ms additional processing time per image
 
 *Performance measurements taken on macOS with Bun v1.2.20. Cold start time measured using hyperfine with 10 runs and 3 warmup iterations.*
+
+## Platform Support
+
+### macOS (✅ Fully Supported)
+
+The primary platform with complete screenshot functionality:
+- **Method**: `screencapture` + AppleScript for window detection
+- **Requirements**: macOS (any recent version)
+- **Features**: Application targeting, window detection, multiple capture strategies
+
+### Linux (🚧 Planned Support)
+
+**TODO: Implement Linux support using Wayland/X11 tools**
+
+#### Prerequisites for Linux Implementation
+
+**For Wayland (Recommended):**
+```bash
+# Install required tools
+sudo apt install grim slurp  # Ubuntu/Debian
+sudo pacman -S grim slurp    # Arch Linux  
+sudo dnf install grim slurp  # Fedora
+```
+
+**For X11 (Legacy):**
+```bash
+# Install alternative tools  
+sudo apt install scrot import-im6.q16  # Ubuntu/Debian
+sudo pacman -S scrot imagemagick        # Arch Linux
+```
+
+#### Planned Implementation Approach
+
+1. **Environment Detection**: Detect Wayland vs X11 session
+2. **Tool Availability**: Check for `grim`/`slurp` (Wayland) or `scrot`/`import` (X11)
+3. **Window Management**: 
+   - Wayland: Use compositor protocols for window detection
+   - X11: Use `xdotool` or `wmctrl` for window enumeration
+4. **Capture Methods**:
+   - Wayland: `grim -g "$(slurp)" output.png` for interactive selection
+   - X11: `import -window windowid output.png` for specific windows
+
+#### Current Limitations
+
+- ❌ Not yet implemented
+- ❌ Wayland security model requires explicit user permission for screenshots  
+- ❌ Window detection varies significantly across desktop environments
+- ❌ Requires additional system dependencies
+
+**Status**: Research phase - contributions welcome!
+
+### Windows (🚧 Planned Support)
+
+**TODO: Implement Windows support using PowerShell/Win32 APIs**
+
+#### Prerequisites for Windows Implementation
+
+**PowerShell Prerequisites:**
+```powershell
+# Check PowerShell version (requires 5.1+ or PowerShell 7+)
+$PSVersionTable.PSVersion
+
+# Check execution policy (may need adjustment)
+Get-ExecutionPolicy
+
+# Set execution policy if needed (run as Administrator)
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Alternative: Native Win32 Tools:**
+```bash
+# Using Windows built-in tools
+# No additional installation required for basic functionality
+```
+
+#### Planned Implementation Approaches
+
+**Option 1: PowerShell + Windows.Graphics.Capture (Modern)**
+```powershell
+# Modern approach using Windows 10+ APIs
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
+[Windows.Graphics.Capture.GraphicsCaptureSession]
+```
+
+**Option 2: PowerShell + Win32 APIs (Compatible)**
+```powershell
+# Traditional approach with broader compatibility
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.Screen]::PrimaryScreen
+```
+
+**Option 3: Native Win32 Tools (Fallback)**
+```batch
+# Using built-in Windows tools
+powershell -Command "Add-Type -AssemblyName System.Drawing..."
+```
+
+#### Implementation Challenges
+
+**Window Detection:**
+- ✅ `Get-Process` for process enumeration
+- ✅ Win32 APIs for window handles and titles
+- ⚠️ UAC/Admin permissions for some applications
+- ⚠️ Modern apps (UWP) have different window models
+
+**Screenshot Capture:**
+- ✅ System.Drawing.Graphics.CopyFromScreen()
+- ✅ Windows.Graphics.Capture for modern apps
+- ⚠️ DPI awareness and scaling issues  
+- ⚠️ Multiple monitor configurations
+
+#### Current Limitations
+
+- ❌ Not yet implemented
+- ❌ PowerShell execution policy restrictions on some systems
+- ❌ UAC prompts may interrupt automation
+- ❌ Modern app sandboxing affects window access
+- ❌ Complex multi-monitor DPI scaling scenarios
+- ❌ Windows Security may block screenshot APIs
+
+#### Feasibility Assessment
+
+| Feature | Feasibility | Complexity | Notes |
+|---------|-------------|------------|-------|
+| **Basic Screenshots** | ✅ High | Low | System.Drawing APIs work reliably |
+| **Window Detection** | ✅ High | Medium | Win32 APIs available via PowerShell |
+| **App Targeting** | ⚠️ Medium | High | UWP apps are challenging |
+| **Automation** | ⚠️ Medium | Medium | Execution policies and UAC issues |
+| **Cross-Version Support** | ⚠️ Medium | High | Windows 7-11 API differences |
+
+**Status**: Feasible but complex - PowerShell approach recommended for initial implementation.

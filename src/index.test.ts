@@ -4,6 +4,7 @@ import { z } from "zod";
 import { join } from "node:path";
 import { existsSync, unlinkSync } from "node:fs";
 import { runScreenshot } from "./screenshot.js";
+import { getPlatformInfo, isMac, supportsScreenshots, getUnsupportedPlatformMessage } from "./platform.js";
 
 describe("screenshot-mcp", () => {
 	const createdFiles: string[] = [];
@@ -185,30 +186,22 @@ describe("screenshot-mcp", () => {
 		}
 	}, 30000);
 
-	test("should return macOS-only error on non-darwin platforms", async () => {
-		// Mock process.platform temporarily
-		const originalPlatform = process.platform;
+	test("should handle platform detection correctly", async () => {
+		// On macOS, screenshots should be supported and we should get to actual execution
+		if (process.platform === "darwin") {
+			const result = await runScreenshot("NonExistentApp99999");
 
-		// Use Object.defineProperty to mock process.platform
-		Object.defineProperty(process, "platform", {
-			value: "win32",
-			writable: true,
-			configurable: true
-		});
-
-		try {
+			expect(result).toBeDefined();
+			expect(result.isError).toBe(true);
+			// Should fail due to app not found, not platform issues
+			expect(result.content[0].text).toMatch(/Could not find app|Screenshot failed/);
+		} else {
+			// On other platforms, should get platform error immediately
 			const result = await runScreenshot("TestApp");
 
 			expect(result).toBeDefined();
 			expect(result.isError).toBe(true);
-			expect(result.content[0].text).toMatch(/macOS.*Windows.*Linux.*not.*supported/i);
-		} finally {
-			// Restore original platform
-			Object.defineProperty(process, "platform", {
-				value: originalPlatform,
-				writable: true,
-				configurable: true
-			});
+			expect(result.content[0].text).toMatch(/Screenshot failed.*not available/i);
 		}
 	});
 
@@ -240,4 +233,40 @@ describe("screenshot-mcp", () => {
 			}
 		}
 	}, 20000);
+
+	test("should provide accurate platform detection", () => {
+		const platformInfo = getPlatformInfo();
+
+		expect(platformInfo).toBeDefined();
+		expect(typeof platformInfo.platform).toBe("string");
+		expect(typeof platformInfo.supportsScreenshots).toBe("boolean");
+		expect(typeof platformInfo.screenshotMethod).toBe("string");
+		expect(Array.isArray(platformInfo.limitations)).toBe(true);
+
+		// On macOS, should support screenshots
+		if (process.platform === "darwin") {
+			expect(platformInfo.platform).toBe("macOS");
+			expect(platformInfo.isMac).toBe(true);
+			expect(platformInfo.supportsScreenshots).toBe(true);
+			expect(platformInfo.screenshotMethod).toBe("screencapture + AppleScript");
+			expect(platformInfo.limitations).toEqual([]);
+		}
+
+		// Test utility functions
+		expect(isMac).toBe(process.platform === "darwin");
+		expect(supportsScreenshots).toBe(process.platform === "darwin");
+	});
+
+	test("should provide helpful unsupported platform messages", () => {
+		// Test current platform message behavior
+		const message = getUnsupportedPlatformMessage();
+
+		if (process.platform === "darwin") {
+			expect(message).toBe("Platform is supported");
+		} else {
+			// On other platforms, should provide helpful error message
+			expect(message).toMatch(/Screenshot functionality is not available/);
+			expect(message).toMatch(/Not yet implemented|Not supported/);
+		}
+	});
 });

@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { supportsScreenshots, getUnsupportedPlatformMessage } from "./platform.js";
 
 const projectRoot = import.meta.dir;
 
@@ -15,13 +16,13 @@ export interface ScreenshotResult {
 
 export async function runScreenshot(appName: string, options?: { compress?: boolean }): Promise<ScreenshotResult> {
 	try {
-		// Platform guard - only macOS is supported
-		if (process.platform !== "darwin") {
+		// Platform guard - check if screenshots are supported
+		if (!supportsScreenshots) {
 			return {
 				content: [
 					{
 						type: "text",
-						text: "Screenshot failed: This feature is only available on macOS. Windows and Linux are not currently supported."
+						text: `Screenshot failed: ${getUnsupportedPlatformMessage()}`
 					}
 				],
 				isError: true

@@ -36,16 +36,15 @@ Acceptance hints: README gains performance table; compression flag documented & 
 - [ ] P2 S Extend screenshot tool schema with `format` (enum: ['png']); reject others gracefully.
 - [ ] P2 M Add `windowStrategy` param (auto|id|bounds|interactive) driving script behavior & docs update.
 - [ ] P2 M Implement `capture_region` tool with zod (x,y,w,h positive ints); validate ranges.
-- [ ] P3 M Add simple in-memory rate limiter (e.g., 10 screenshots / minute); return `[RATE_LIMIT]` on exceed.
 - [ ] P3 M Optional `returnData:true` to base64 encode PNG (size gate ~1MB) instead of path; test path & data modes.
 
 Acceptance hints: README lists new tools/params; tests cover invalid format, rate limit, region validation.
 
 ## 4. Cross-Platform Strategy
 
-- [ ] P1 M Create `src/platform.ts` exporting `isMac`, `supportsScreenshots`, placeholders for linux/windows.
-- [ ] P3 M Add README Linux stub section (grim/slurp instructions) with TODO markers.
-- [ ] P3 M Add Windows feasibility doc section (PowerShell approaches, limitations) in README.
+- [x] P1 M Create `src/platform.ts` exporting `isMac`, `supportsScreenshots`, placeholders for linux/windows.
+- [x] P3 M Add README Linux stub section (grim/slurp instructions) with TODO markers.
+- [x] P3 M Add Windows feasibility doc section (PowerShell approaches, limitations) in README.
 
 Acceptance hints: Server imports platform module; non-mac path returns explicit unsupported message.
 
